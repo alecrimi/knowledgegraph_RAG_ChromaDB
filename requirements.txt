@@ -4,7 +4,7 @@ torch==2.1.2
 chromadb==0.4.24
 sentence-transformers==2.5.1
 huggingface_hub==0.20.3
-chainlit==0.7.700
+chainlit 
 mistralai 
 python-dotenv==1.0.0
 networkx==3.2.1
