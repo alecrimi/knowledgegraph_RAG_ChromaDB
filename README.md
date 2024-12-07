@@ -28,7 +28,7 @@ This project implements a cutting-edge Retrieval-Augmented Generation (RAG) syst
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/mistral-rag-system.git
+git clone https://github.com/alecrimi/knowledgegraph_RAG_ChromaDB.git
 cd mistral-rag-system
 ```
 
