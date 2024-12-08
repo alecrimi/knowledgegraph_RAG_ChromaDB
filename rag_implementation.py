@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
 from knowledge_graph import KnowledgeGraphRAG
 
 class MistralRAGSystem:
@@ -72,8 +71,8 @@ class MistralRAGSystem:
         try:
             # Prepare chat messages
             messages = [
-                ChatMessage(role="system", content="You are a helpful AI assistant that uses provided context to generate comprehensive answers."),
-                ChatMessage(role="user", content=augmented_query)
+                {"role": "system", "content": "You are a helpful AI assistant that uses provided context to generate comprehensive answers."},
+                {"role": "user", "content": augmented_query}
             ]
             
             # Generate response using Mistral API
@@ -85,7 +84,7 @@ class MistralRAGSystem:
             )
             
             # Extract and return the response
-            return chat_response.choices[0].message.content
+            return chat_response["choices"][0]["message"]["content"]
         
         except Exception as e:
             return f"An error occurred: {str(e)}"
@@ -110,7 +109,7 @@ class MistralRAGSystem:
         """
         try:
             models = self.client.list_models()
-            return [model.id for model in models]
+            return [model["id"] for model in models]
         except Exception as e:
             return [f"Error retrieving models: {str(e)}"]
 
