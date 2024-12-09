@@ -1,24 +1,21 @@
 import os
 from dotenv import load_dotenv
-from mistralai.client import MistralClient
-from knowledge_graph import KnowledgeGraphRAG
+import requests
+from graph_embedding import KnowledgeGraphRAG
 
 class MistralRAGSystem:
     def __init__(self):
         # Load environment variables
         load_dotenv()
         
-        # Get Mistral API key from environment variable
+        # Get Hugging Face API key from environment variable
         self.api_key = os.getenv('MISTRAL_API_KEY')
         if not self.api_key:
-            raise ValueError("MISTRAL_API_KEY must be set in .env file")
+            raise ValueError("HUGGINGFACE_API_KEY must be set in .env file")
         
-        # Initialize Mistral API client
-        self.client = MistralClient(api_key=self.api_key)
-        
-        # Default model (can be changed)
-        self.model = "mistral-large-latest"
-        
+        # Default model (corrected name)
+        self.model = "mistralai/Mistral-7B-v0.1"  
+                
         # Initialize Knowledge Graph
         self.knowledge_graph = KnowledgeGraphRAG()
 
@@ -35,32 +32,34 @@ class MistralRAGSystem:
         # Retrieve similar nodes
         similar_nodes = self.knowledge_graph.retrieve_similar_nodes(query)
         
-        # Construct augmented context
-        context = "\n".join([
-            doc for doc in similar_nodes.get('documents', [])
-        ])
+        # If similar_nodes is a list, iterate over it directly
+        context = "\n".join([str(doc) for doc in similar_nodes])
         
         # Create a structured prompt with context
         augmented_prompt = f"""
-        Context Information:
-        {context}
+        #Context Information:
+        #{context}
 
         Based on the provided context and your extensive knowledge, 
         please answer the following query comprehensively:
 
         Query: {query}
 
-        Your response should:
+        Response:
+        """
+       
+        return augmented_prompt
+    '''
+    # Your response should:
         1. Incorporate relevant information from the context
         2. Provide a detailed and informative answer
         3. Cite the context when directly relevant
-        """
-        
-        return augmented_prompt
+        4. Only when the information is not in the provided context, use the main language model
+    '''
 
     def generate_response(self, augmented_query: str) -> str:
         """
-        Generate response using Mistral Online API
+        Generate response using Hugging Face API for Mistral model
         
         Args:
             augmented_query (str): Augmented query with context
@@ -69,23 +68,45 @@ class MistralRAGSystem:
             str: Generated response
         """
         try:
-            # Prepare chat messages
-            messages = [
-                {"role": "system", "content": "You are a helpful AI assistant that uses provided context to generate comprehensive answers."},
-                {"role": "user", "content": augmented_query}
-            ]
+            # Prepare headers with the Hugging Face API key
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
+            }
             
-            # Generate response using Mistral API
-            chat_response = self.client.chat(
-                model=self.model,
-                messages=messages,
-                temperature=0.7,  # Creativity level
-                max_tokens=500   # Maximum response length
-            )
-            
-            # Extract and return the response
-            return chat_response["choices"][0]["message"]["content"]
-        
+            # Prepare payload
+            payload = {
+                'inputs': augmented_query
+            }
+
+            # Hugging Face Inference API endpoint for Mistral model
+            url = f'https://api-inference.huggingface.co/models/{self.model}'
+
+            # Make the POST request to generate a response
+            response = requests.post(url, json=payload, headers=headers)
+
+            # Check if the request was successful
+            if response.status_code == 200:
+                #return response.json()[0]['generated_text']
+                generated_text = response.json()[0]['generated_text']
+                
+                
+                print("Raw response:", response.json())
+                
+                start_index = generated_text.find("Response:") + len("Response:")
+                response_without_context = generated_text[start_index:].strip()
+                
+                #response_without_context=generated_text
+                
+                # Remove any remaining instructions or artifacts
+                #response_without_context = response_without_context.split("\n", 1)[0]  # Take only the first logical sentence
+
+                
+                #print(response_without_context)
+                return response_without_context
+            else:
+                return f"Error: {response.status_code} - {response.text}"
+
         except Exception as e:
             return f"An error occurred: {str(e)}"
 
@@ -102,16 +123,13 @@ class MistralRAGSystem:
 
     def list_available_models(self):
         """
-        List available Mistral models
+        List available Mistral models (Hugging Face)
         
         Returns:
             List of available model names
         """
-        try:
-            models = self.client.list_models()
-            return [model["id"] for model in models]
-        except Exception as e:
-            return [f"Error retrieving models: {str(e)}"]
+        # Hugging Face doesn't provide a direct API for listing models
+        return ["List of models available on Hugging Face Hub: Search at https://huggingface.co/models"]
 
     def change_model(self, model_name: str):
         """
@@ -120,9 +138,7 @@ class MistralRAGSystem:
         Args:
             model_name (str): Name of the model to use
         """
-        available_models = self.list_available_models()
-        if model_name in available_models:
-            self.model = model_name
-            return f"Model changed to {model_name}"
-        else:
-            return f"Model {model_name} not available. Choose from: {available_models}"
+        # For Hugging Face, we can't list models directly via the API
+        self.model = model_name
+        return f"Model changed to {model_name}"
+

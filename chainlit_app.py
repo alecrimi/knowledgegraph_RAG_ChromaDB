@@ -21,6 +21,7 @@ def initialize_knowledge_base():
     
     for item in knowledge_items:
         rag_system.add_knowledge(item["id"], item["content"], item["metadata"])
+    rag_system
 
 # Initialize knowledge base
 initialize_knowledge_base()

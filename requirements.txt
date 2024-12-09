@@ -5,7 +5,7 @@ chromadb
 sentence-transformers 
 huggingface_hub 
 chainlit 
-mistralai==0.4.2
+mistralai 
 python-dotenv 
 networkx 
 matplotlib 
