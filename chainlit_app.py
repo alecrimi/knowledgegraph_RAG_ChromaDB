@@ -30,26 +30,26 @@ async def start():
     await cl.Message(content="RAG System with Mistral is ready! How can I help you today?").send()
 
 @cl.on_message
-async def main(message: str):
+async def main(message: cl.Message):
+    # Check if the message is a knowledge addition command
+    if message.content.startswith("/add_knowledge"):
+        # Parse the message to extract node_id and content
+        parts = message.content.split(maxsplit=3)
+        if len(parts) < 3:
+            await cl.Message(content="Usage: /add_knowledge <node_id> <content>").send()
+            return
+        
+        node_id, content = parts[1], parts[2]
+        rag_system.add_knowledge(node_id, content)
+        await cl.Message(content=f"Added knowledge node: {node_id}").send()
+        return
+
+    # Regular query processing
     # Augment the query with relevant context
-    augmented_query = rag_system.augment_query(message)
+    augmented_query = rag_system.augment_query(message.content)
     
     # Generate response
     response = rag_system.generate_response(augmented_query)
     
     # Send the response back to the user
     await cl.Message(content=response).send()
-
-# Optional: Add a way to dynamically add knowledge
-@cl.on_message(pattern="^/add_knowledge")
-async def add_knowledge(message: str):
-    # Parse the message to extract node_id and content
-    parts = message.split(maxsplit=3)
-    if len(parts) < 3:
-        await cl.Message(content="Usage: /add_knowledge <node_id> <content>").send()
-        return
-    
-    node_id, content = parts[1], parts[2]
-    rag_system.add_knowledge(node_id, content)
-    await cl.Message(content=f"Added knowledge node: {node_id}").send()
-
