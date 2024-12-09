@@ -1,13 +1,15 @@
 # Install these dependencies
 transformers
 torch==2.0
-chromadb==0.4.24
-sentence-transformers==2.5.1
-huggingface_hub==0.20.3
+chromadb
+sentence-transformers 
+huggingface_hub 
 chainlit 
 mistralai==0.4.2
-python-dotenv==1.0.0
-networkx==3.2.1
-matplotlib==3.8.2
+python-dotenv 
+networkx 
+matplotlib 
+
+
 
 pydantic==2.10.1 
